@@ -1,0 +1,30 @@
+{
+  "name": "ai-job-search-autopilot-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension: detects job postings, fills and submits application forms through the local autopilot daemon, and shows the pipeline in a side panel.",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "prepare-types": "wxt prepare",
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@webext-core/messaging": "^4.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.2.9",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@wxt-dev/module-react": "^1.2.2",
+    "jsdom": "^30.0.1",
+    "typescript": "~5.9.0",
+    "vitest": "^5.0.0",
+    "wxt": "^0.21.4"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "_comment": "Copy to answers.json (gitignored) and fill in. Every field is optional; anything left empty makes the matching form fields skip (and block auto-submit if the form requires them). Facts here must be true - they are typed into employer forms verbatim.",
+  "contact": {
+    "firstName": "",
+    "lastName": "",
+    "preferredName": "",
+    "email": "",
+    "phone": "",
+    "phoneCountryCode": "+1",
+    "address": {
+      "line1": "",
+      "line2": "",
+      "city": "",
+      "state": "",
+      "postalCode": "",
+      "country": ""
+    },
+    "linkedin": "https://www.linkedin.com/in/your-handle",
+    "github": "",
+    "portfolio": "",
+    "website": ""
+  },
+  "workAuthorization": {
+    "United States": { "authorized": false, "requiresSponsorship": true, "status": "e.g. F-1 OPT / H-1B / Green Card / Citizen", "notes": "" },
+    "Denmark": { "authorized": false, "requiresSponsorship": true, "status": "", "notes": "" }
+  },
+  "preferences": {
+    "salaryExpectation": "",
+    "salaryCurrency": "USD",
+    "noticePeriod": "",
+    "earliestStartDate": "",
+    "willingToRelocate": false,
+    "remotePreference": "hybrid",
+    "howDidYouHear": "LinkedIn",
+    "yearsOfExperience": "",
+    "currentCompany": "",
+    "currentTitle": "",
+    "previouslyEmployedHere": false,
+    "referredBy": ""
+  },
+  "demographics": {
+    "policy": "decline",
+    "gender": "",
+    "ethnicity": "",
+    "veteranStatus": "",
+    "disabilityStatus": "",
+    "pronouns": ""
+  },
+  "consents": {
+    "privacyPolicy": true,
+    "termsAndConditions": true,
+    "futureOpportunities": false,
+    "marketing": false,
+    "backgroundCheck": true
+  },
+  "education": [
+    { "school": "", "degree": "", "field": "", "startYear": "", "endYear": "", "gpa": "" }
+  ],
+  "experience": [
+    { "company": "", "title": "", "location": "", "startDate": "", "endDate": "", "current": true, "description": "" }
+  ],
+  "custom": [
+    { "question": "Are you at least 18 years old?", "answer": "Yes" }
+  ]
+}
