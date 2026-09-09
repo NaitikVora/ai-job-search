@@ -158,8 +158,19 @@ Postings are treated as untrusted input (the workflow follows no instructions em
 - **`/html-report`** generates a self-contained HTML dashboard from `job_search_tracker.csv` and the application archives — stat cards, status/sector/channel/funnel charts (inline SVG, no external dependencies), and a filterable applications table. Opens directly in a browser, fully offline. Re-run it any time after `/apply` or `/outcome` adds new entries.
 - **`/add-template`** registers your own CV or cover letter template (LaTeX, Typst, or another toolchain) in place of the stock ones. It captures the template's instructions (source extension, compile command, fonts, style rules, page limit), runs a mandatory test compile, and wires the template into `/apply`. See [Custom templates](#custom-templates) below.
 - **`/add-portal`** generates a job-portal search skill for a job board in your market. It investigates the portal (search URL pattern, result structure, access rules), scaffolds the CLI skill from the same structure as the shipped ones, and test-runs a live query before registering. See [Job search tools](#job-search-tools) below.
+- **`/autoapply`** is the non-interactive `/apply` used by the local autopilot daemon: fit gate, draft, compile, verify, form-field answers. See [Autopilot](#autopilot) below.
+- **`/outreach`** finds current employees via Apollo, drafts referral emails and LinkedIn notes, and can send from Gmail within caps. LinkedIn messages are never sent automatically.
 
 `/reset` is also available, see [Starting over](#starting-over) below.
+
+## Autopilot
+
+A Chrome extension plus a local daemon turn `/apply` into an assisted (or fully automatic) loop: land on a posting, get a tailored CV and cover letter, fill the form, record the tracker row, and draft referral outreach.
+
+- Daemon: [`agent/README.md`](agent/README.md) — Claude Agent SDK, field mapping, auto-submit gate, Apollo + Gmail.
+- Extension: [`extension/README.md`](extension/README.md) — detect, per-ATS fill (Greenhouse / Lever / Ashby / Workday), side panel.
+
+You still need a **private** repo, `/setup`, LaTeX (or Typst), and the keys listed in the daemon README before tailoring or sending will pass the doctor checks.
 
 ## File structure
 
@@ -169,6 +180,8 @@ ai-job-search/
 ├── .claude/
 │   ├── commands/
 │   │   ├── apply.md                   # /apply workflow (drafter-reviewer)
+│   │   ├── autoapply.md               # /autoapply headless apply (daemon)
+│   │   ├── outreach.md                # /outreach referral emails (Apollo + Gmail)
 │   │   ├── setup.md                   # /setup onboarding (documents folder, CV import, or interview)
 │   │   ├── expand.md                  # /expand competency enrichment from documents and online presence
 │   │   ├── add-template.md            # /add-template register custom templates (LaTeX, Typst, ...)
@@ -227,6 +240,8 @@ ai-job-search/
 │   ├── upstream_triage.py             # Sort upstream commits into worth-reviewing vs probably-skip
 │   ├── verify_pdf.py                  # Verify a compiled PDF's page count and extractable text
 │   └── README_SALARY_TOOL.md          # Salary tool setup instructions
+├── agent/                             # Autopilot daemon (Claude Agent SDK, Apollo, Gmail)
+├── extension/                         # Chrome MV3 extension (WXT): detect, fill, side panel
 ├── job_scraper/                       # Scraper state (seen jobs, results)
 ├── gmail_sync/                        # /gmail-sync state (processed message IDs, last sync date)
 ├── upskill/                           # /upskill report output (markdown reports per run)

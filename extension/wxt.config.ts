@@ -14,6 +14,7 @@ export default defineConfig({
     host_permissions: ['http://127.0.0.1/*', 'http://localhost/*', '<all_urls>'],
     action: { default_title: 'AI Job Search Autopilot' },
     side_panel: { default_path: 'sidepanel.html' },
+    options_ui: { page: 'options.html', open_in_tab: true },
     minimum_chrome_version: '116',
   },
   vite: () => ({

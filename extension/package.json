@@ -10,7 +10,7 @@
     "zip": "wxt zip",
     "prepare-types": "wxt prepare",
     "typecheck": "wxt prepare && tsc --noEmit",
-    "test": "vitest run"
+    "test": "wxt prepare && vitest run"
   },
   "dependencies": {
     "@webext-core/messaging": "^4.0.0",

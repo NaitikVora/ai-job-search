@@ -33,6 +33,9 @@ linkedin_Profile.pdf
 # fetching service; the .env holding it must never be committed.
 .env
 .env.*
+# Example env files are templates, not secrets.
+!agent/.env.example
+!extension/.env.example
 
 # Personal photos and signatures
 *.jpg
