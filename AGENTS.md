@@ -1,5 +1,5 @@
 ---
-framework_version: 1.0.0
+framework_version: 1.1.0
 ---
 
 # Agent Guidelines: AI Job Search
@@ -16,4 +16,6 @@ To prevent duplication and configuration drift across different AI agent framewo
    - The step-by-step instructions and triggers for tasks (setup, scrape, rank, apply, upskill, interview) are defined in the [.claude/](.claude/) directory (specifically under `.claude/skills/` and `.claude/commands/`).
    - Do not duplicate these rules or specifications. Treat `.claude/` files as the single source of truth.
 3. **Portal Search Skills:**
-   - Job-portal search CLIs live under [.agents/skills/](.agents/skills/) in the portable Agent Skills format (with a `SKILL.md` per portal). Codex and Antigravity discover these automatically; the `/scrape` workflow in [.claude/skills/job-scraper/](.claude/skills/job-scraper/) orchestrates them.
+ - Job-portal search CLIs live under [.agents/skills/](.agents/skills/) in the portable Agent Skills format (with a `SKILL.md` per portal). Codex and Antigravity discover these automatically; the `/scrape` workflow in [.claude/skills/job-scraper/](.claude/skills/job-scraper/) orchestrates them.
+4. **Autopilot (browser extension + local daemon):**
+ - [extension/](extension/) is a Chrome MV3 extension that detects job postings, scans and fills application forms, and shows the pipeline in a side panel. [agent/](agent/) is the local daemon it talks to: it runs `/autoapply` ([.claude/commands/autoapply.md](.claude/commands/autoapply.md)) through the Claude Agent SDK, maps form fields to grounded answers, decides the auto-submit gate, updates `job_search_tracker.csv`, and runs referral outreach (`/outreach`, rules in `10-referral-outreach.md`). Both reuse the canonical workflow files above rather than duplicating them.

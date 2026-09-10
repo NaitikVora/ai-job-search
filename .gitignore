@@ -33,6 +33,9 @@ linkedin_Profile.pdf
 # fetching service; the .env holding it must never be committed.
 .env
 .env.*
+# Example env files are templates, not secrets.
+!agent/.env.example
+!extension/.env.example
 
 # Personal photos and signatures
 *.jpg
@@ -112,3 +115,17 @@ company_research/*.json
 
 # Brainstorm mockups (superpowers visual companion) - never ship
 .superpowers/
+
+# Autopilot daemon (agent/) and Chrome extension (extension/): personal state and secrets.
+# config.json holds personal thresholds, state/ holds job + outreach history, secrets/ holds
+# Gmail OAuth material, profile/answers.json holds your contact details and work authorisation.
+agent/config.json
+agent/state/
+agent/secrets/
+agent/profile/answers.json
+agent/dist/
+extension/.output/
+extension/.wxt/
+extension/dist/
+# Referral outreach log mirrored from agent/state (names, emails, employers contacted).
+outreach/

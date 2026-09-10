@@ -1,0 +1,34 @@
+{
+  "port": 47831,
+  "repoRoot": "..",
+  "autopilot": {
+    "enabled": true,
+    "autoSubmit": true,
+    "minFitToApply": 60,
+    "minFieldConfidence": 0.8,
+    "maxApplicationsPerDay": 15,
+    "maxBudgetUsdPerApplication": 4,
+    "maxTurnsPerApplication": 160,
+    "reviewOnlyAts": []
+  },
+  "outreach": {
+    "mode": "auto",
+    "peoplePerCompany": 10,
+    "maxEmailsPerDay": 20,
+    "maxEmailsPerCompany": 10,
+    "cooldownDaysPerCompany": 30,
+    "followUpAfterDays": 7,
+    "maxFollowUps": 1,
+    "attachCv": true,
+    "requireHasEmail": true,
+    "extraTitles": ["Talent Acquisition", "Recruiter", "Technical Recruiter"]
+  },
+  "llm": {
+    "backend": "auto",
+    "model": ""
+  },
+  "gmail": {
+    "oauthPort": 47832,
+    "fromName": ""
+  }
+}

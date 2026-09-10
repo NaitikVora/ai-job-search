@@ -1,0 +1,16 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "types": ["chrome"],
+    "paths": {
+      "@protocol": ["../agent/src/protocol.ts"],
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["entrypoints", "src", "test", ".wxt/wxt.d.ts"],
+  "exclude": ["node_modules", ".output"]
+}

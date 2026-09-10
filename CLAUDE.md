@@ -92,6 +92,12 @@ automatically from your Languages table above - don't duplicate them here. -->
 - `cover_letters/` - LaTeX cover letters (custom cover.cls template)
 - `.claude/skills/` - AI skill definitions for the application workflow
 - `.agents/skills/` - Job search CLI tools
+- `agent/` - Autopilot daemon (Node/TypeScript): runs `/autoapply` headlessly via the Claude Agent SDK, maps application-form fields to grounded answers, gates auto-submit, updates the tracker, runs `/outreach` referral requests (Apollo + Gmail). See `agent/README.md`
+- `extension/` - Chrome extension (WXT, Manifest V3): detects postings, fills and submits application forms with per-ATS adapters, side panel for the pipeline. See `extension/README.md`
+
+## Autopilot Commands
+- `/autoapply` - non-interactive `/apply`: fit gate (default 60), drafts + compiles + verifies documents, drafts form-field answers, writes `documents/applications/<slug>/autoapply_result.json`. Used by the daemon; runnable by hand
+- `/outreach` - find current employees at a company via Apollo, draft referral emails and LinkedIn notes in the candidate's voice, send from Gmail within caps (rules: `10-referral-outreach.md`). LinkedIn messages are never sent automatically
 
 ## Workflow for New Job Applications
 1. User provides a job posting (URL or text)
