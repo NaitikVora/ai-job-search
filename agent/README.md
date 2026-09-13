@@ -31,6 +31,11 @@ The process listens on `http://127.0.0.1:47831` and prints a **pairing token**. 
 
 `config.json` defaults match a fully automatic posture: `autopilot.autoSubmit: true`, `outreach.mode: "auto"`, `peoplePerCompany: 10`. Caps still apply (`maxApplicationsPerDay`, `maxEmailsPerDay`, `minFitToApply` = 60). Flip `autoSubmit` or `outreach.mode` to `"approve"` if you want a queue.
 
+The extension's **SpeedyApply review queue** is always fill-only: starting a batch changes
+`autopilot.autoSubmit` to `false` through the daemon API and never clicks the final application
+button. It processes one posting at a time and leaves each prepared form in its own tab. See
+[`extension/README.md`](../extension/README.md#speedyapply-latest-first-review-queue).
+
 ## CLI
 
 ```bash
