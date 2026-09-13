@@ -41,7 +41,7 @@ export const linkedinAdapter: AtsAdapter = {
     return Boolean(doc.querySelector('.jobs-easy-apply-modal, .jobs-easy-apply-content'));
   },
   easyApplyOnly(doc) {
-    return isEasyApply(doc) && !this.extract(doc).applyUrl;
+    return isEasyApply(doc) && !this.extract(doc, doc.location?.href ?? '').applyUrl;
   },
   submitSelector: 'button[aria-label*="Submit application" i], button[aria-label*="Submit" i]',
   nextSelector: 'button[aria-label*="Continue" i], button[aria-label*="Next" i], button[aria-label*="Review" i]',

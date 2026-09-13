@@ -66,10 +66,11 @@ function cssEscapeAttr(v: string): string {
 }
 
 function currentValue(el: Element): string | undefined {
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+  if (el instanceof HTMLInputElement) {
     if (el.type === 'checkbox' || el.type === 'radio') return el.checked ? el.value || 'true' : '';
     return el.value || undefined;
   }
+  if (el instanceof HTMLTextAreaElement) return el.value || undefined;
   if (el instanceof HTMLSelectElement) return el.value || undefined;
   return undefined;
 }
@@ -115,9 +116,6 @@ function candidates(root: Element | Document): Element[] {
           checkboxGroupNames.add(el.name);
         }
       }
-    }
-    if (el instanceof HTMLElement && el.type === undefined && !visible(el) && el.getAttribute('type') !== 'hidden') {
-      /* keep going; vis check below */
     }
     const kind = fieldKind(el);
     if (kind === 'hidden' || visible(el) || (el instanceof HTMLInputElement && el.type === 'hidden')) {

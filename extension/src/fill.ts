@@ -20,7 +20,8 @@ function click(el: Element): void {
 
 function applyFile(el: HTMLInputElement, file: FilePayload): void {
   const bytes = base64ToBytes(file.base64);
-  const blob = new File([bytes], file.name, { type: file.mime });
+  const body = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const blob = new File([body], file.name, { type: file.mime });
   const dt = new DataTransfer();
   dt.items.add(blob);
   el.files = dt.files;
