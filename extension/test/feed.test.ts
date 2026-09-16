@@ -3,6 +3,7 @@ import {
   canonicalJobUrl,
   enqueueNextUnseen,
   githubRawUrl,
+  isEligibleFeedEntry,
   mergeFeedEntries,
   parseAgeHours,
   parseSpeedyApplyMarkdown,
@@ -146,5 +147,36 @@ describe('review queue orchestration', () => {
     expect(stopped.queue).toEqual([]);
     expect(stopped.running).toBe(false);
     expect(stopped.entries.every((entry) => entry.status === 'unseen')).toBe(true);
+  });
+
+  it('marks Starshield and school-locked titles skipped instead of queueing them', () => {
+    const feed = {
+      sourceUrl: 'https://example.com/feed.md',
+      rawUrl: 'https://example.com/feed.md',
+      entries: [
+        {
+          ...parseSpeedyApplyMarkdown(FEED)[0]!,
+          id: 'starshield',
+          company: 'SpaceX',
+          title: 'Software Engineer, Starshield',
+          url: 'https://spacex.example/starshield',
+          status: 'unseen' as const,
+        },
+        {
+          ...parseSpeedyApplyMarkdown(FEED)[0]!,
+          id: 'ok',
+          company: 'Adobe',
+          title: 'Newest Role',
+          url: 'https://adobe.example/jobs/ok',
+          status: 'unseen' as const,
+        },
+      ],
+      queue: [],
+      running: false,
+    };
+    expect(isEligibleFeedEntry(feed.entries[0]!)).toBe(false);
+    const queued = enqueueNextUnseen(feed, 2);
+    expect(queued.queue).toEqual(['ok']);
+    expect(queued.entries.find((entry) => entry.id === 'starshield')?.status).toBe('skipped');
   });
 });

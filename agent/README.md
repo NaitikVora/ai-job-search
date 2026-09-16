@@ -1,6 +1,6 @@
 # Autopilot daemon
 
-Local Node service that the Chrome extension talks to. It runs `/autoapply` through the Claude Agent SDK, maps form fields to grounded answers, gates auto-submit, updates `job_search_tracker.csv`, and sends referral emails via Apollo + Gmail.
+Local Node service that the Chrome extension talks to. Discovery is the SpeedyApply [NEW_GRAD_USA.md](https://github.com/speedyapply/2027-SWE-College-Jobs/blob/main/NEW_GRAD_USA.md) feed. Tailoring is `/autoapply` in **Cursor** when `llm.backend` is `cursor` (the default). Claude Code is optional. The daemon maps form fields to grounded answers, gates auto-submit, updates `job_search_tracker.csv`, and can send referral emails via Apollo + Gmail.
 
 LinkedIn messages are **never sent automatically**. The daemon only drafts a note; you paste it by hand.
 
@@ -9,10 +9,10 @@ LinkedIn messages are **never sent automatically**. The daemon only drafts a not
 Do these **before** the daemon can tailor or submit anything. `npm run doctor` reports each one.
 
 1. **Private repo before `/setup`.** A public GitHub fork of this project stays public. `/setup` writes your name, contact details and employment history into tracked files. Use a private repository with this one as `upstream` ([SETUP.md section 8](../SETUP.md#8-pulling-upstream-updates-into-your-fork)).
-2. **`/setup`** in Claude Code so `CLAUDE.md` and `.claude/skills/job-application-assistant/01-candidate-profile.md` no longer contain `[PLACEHOLDER]` tokens.
+2. **`/setup`** so `CLAUDE.md` and `.claude/skills/job-application-assistant/01-candidate-profile.md` no longer contain `[PLACEHOLDER]` tokens.
 3. **Standing answers:** copy [`profile/answers.example.json`](profile/answers.example.json) to `profile/answers.json` and fill in contact, work authorisation, salary, notice period, and consent flags. Empty required fields block auto-submit.
 4. **LaTeX** (`lualatex` + `xelatex`) so `/autoapply` can compile a 2-page CV and a 1-page cover letter. Or register a Typst template with `/add-template`. See [SETUP.md](../SETUP.md).
-5. **Claude Code login** (or `ANTHROPIC_API_KEY` + `ANTHROPIC_MODEL` for field mapping / outreach drafts). `/autoapply` always uses the Agent SDK.
+5. **Cursor** for `/autoapply` when `llm.backend` is `cursor`. Claude Code login (or `ANTHROPIC_API_KEY` + `ANTHROPIC_MODEL`) is only needed if you switch `llm.backend` to `auto` / `anthropic` / `agent-sdk`, or for LLM field-mapping and outreach drafts.
 6. **`APOLLO_API_KEY`** (master key) in `agent/.env` for people search. Search is free; revealing a work email costs 1 credit. Ten people per company ≈ 10 credits.
 7. **Gmail:** a Desktop-app OAuth client JSON at `agent/secrets/gmail_credentials.json`, then `npm run cli -- gmail auth`.
 
@@ -29,7 +29,7 @@ npm start
 
 The process listens on `http://127.0.0.1:47831` and prints a **pairing token**. Paste that token into the extension Settings page ([`extension/README.md`](../extension/README.md)).
 
-`config.json` defaults match a fully automatic posture: `autopilot.autoSubmit: true`, `outreach.mode: "auto"`, `peoplePerCompany: 10`. Caps still apply (`maxApplicationsPerDay`, `maxEmailsPerDay`, `minFitToApply` = 60). Flip `autoSubmit` or `outreach.mode` to `"approve"` if you want a queue.
+`config.example.json` sets `llm.backend` to `cursor`. A filled-in `config.json` for review-only apply should keep `autopilot.autoSubmit: false` and `outreach.mode: "off"` until you want the daemon to click submit or send referral mail. Caps still apply (`maxApplicationsPerDay`, `minFitToApply` = 60).
 
 The extension's **SpeedyApply review queue** is always fill-only: starting a batch changes
 `autopilot.autoSubmit` to `false` through the daemon API and never clicks the final application
@@ -46,7 +46,11 @@ npm run cli -- outreach --company "Acme" --role "ML Engineer" [--domain acme.com
 npm run cli -- outreach list
 npm run cli -- outreach send-pending
 npm run cli -- jobs
+npm run cli -- feed --count 10
+npm run cli -- feed --count 10 --write-postings
 ```
+
+`feed` reads SpeedyApply only (no LinkedIn / Jobindex scrape). Newest first by the markdown Age column. `--write-postings` writes metadata stubs under `documents/postings/` so Cursor can run `/autoapply --posting-file ...`.
 
 `/outreach` in Claude Code calls this CLI. Do not bypass it with raw Apollo or Gmail curl.
 

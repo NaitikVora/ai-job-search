@@ -30,6 +30,9 @@ The **Feed** tab is preconfigured for
 4. Review the employer form and generated documents in each tab. Submit by hand. A visible
    confirmation is recorded automatically; use **Pipeline → I submitted it** if an ATS does not
    expose a detectable confirmation.
+5. Titles and companies that match the visa / clearance / school-lock / staffing-mill skip list
+   (Starshield, Booz Allen, ActioNet, "UF Only", "Georgia Tech Only", W2 mills, PhD-only) are
+   marked skipped and never opened.
 
 Progress and deduplication persist in `chrome.storage.local`, including across service-worker and
 browser restarts. **Stop after active** returns unopened jobs to the unseen queue. The extension

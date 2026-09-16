@@ -49,15 +49,48 @@ export function writePostingFile(paths: Paths, posting: JobPosting): string {
  * threshold, otherwise drafts + compiles + verifies the CV and cover letter, drafts the
  * free-text form answers, records the tracker row, and returns the structured result.
  */
+function loadSavedResult(paths: Paths, posting: JobPosting): AutoapplyResult | undefined {
+  const slug = applicationSlug(posting.company, posting.title);
+  if (!slug) return undefined;
+  const file = path.join(paths.applicationsDir, slug, 'autoapply_result.json');
+  const saved = readJson<unknown>(file, undefined);
+  if (!saved) return undefined;
+  return parseAutoapplyResult(saved);
+}
+
 export async function tailorForPosting(
   cfg: AgentConfig,
   paths: Paths,
   posting: JobPosting,
   onLog: (line: string) => void,
 ): Promise<TailorOutcome> {
+  const existing = (() => {
+    try {
+      return loadSavedResult(paths, posting);
+    } catch {
+      return undefined;
+    }
+  })();
+  if (existing) {
+    onLog(`using Cursor result documents/applications/${existing.slug}/autoapply_result.json`);
+    return { result: existing, costUsd: 0, turns: 0, denials: [] };
+  }
+
   const postingFile = writePostingFile(paths, posting);
   const minFit = cfg.autopilot.minFitToApply;
   const prompt = `/autoapply --min-fit ${minFit} --posting-file "${postingFile}" --url "${posting.url}"`;
+
+  if (cfg.llm.backend === 'cursor') {
+    onLog(`Cursor tailor: ${prompt}`);
+    return {
+      costUsd: 0,
+      turns: 0,
+      denials: [],
+      error:
+        `Cursor backend: posting saved to ${postingFile}. In Cursor, run: ${prompt}`,
+    };
+  }
+
   onLog(`running ${prompt}`);
 
   const run = await runAgent({

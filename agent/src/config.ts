@@ -53,8 +53,12 @@ const ConfigSchema = z.object({
     .prefault({}),
   llm: z
     .object({
-      /** `auto`: direct Anthropic API when ANTHROPIC_API_KEY is set, else the Agent SDK (Claude Code login). */
-      backend: z.enum(['auto', 'anthropic', 'agent-sdk']).default('auto'),
+      /**
+       * `cursor` (default for this fork): this Cursor agent runs `/autoapply`.
+       * `auto`: Anthropic API when keyed, else Claude Agent SDK.
+       * Discovery is SpeedyApply, not Claude.
+       */
+      backend: z.enum(['auto', 'anthropic', 'agent-sdk', 'cursor']).default('cursor'),
       /** Model id for the direct Anthropic backend. Leave empty to use the SDK default. */
       model: z.string().default(''),
     })

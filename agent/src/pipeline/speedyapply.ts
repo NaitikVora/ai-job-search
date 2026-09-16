@@ -1,21 +1,12 @@
+/** SpeedyApply NEW_GRAD_USA.md parser. Discovery source for Cursor-driven apply. */
+
+import type { AtsKind, JobPosting } from '../protocol.js';
+import { toDomain } from '../util/naming.js';
+
 export const DEFAULT_SPEEDYAPPLY_FEED =
   'https://github.com/speedyapply/2027-SWE-College-Jobs/blob/main/NEW_GRAD_USA.md';
 
-export type FeedSection = 'FAANG+' | 'Quant' | 'Other' | string;
-
-export type FeedEntryStatus =
-  | 'unseen'
-  | 'queued'
-  | 'opening'
-  | 'loading'
-  | 'tailoring'
-  | 'filling'
-  | 'review'
-  | 'submitted'
-  | 'skipped'
-  | 'failed';
-
-export interface FeedEntry {
+export interface SpeedyApplyJob {
   id: string;
   company: string;
   title: string;
@@ -24,38 +15,15 @@ export interface FeedEntry {
   url: string;
   companyUrl?: string;
   ageLabel: string;
-  /** Numeric sort key. Smaller is newer. */
   ageHours: number;
-  section: FeedSection;
+  section: string;
   sourceOrder: number;
-  status: FeedEntryStatus;
-  tabId?: number;
-  jobId?: string;
-  error?: string;
 }
 
-export interface FeedState {
-  sourceUrl: string;
-  rawUrl: string;
-  syncedAt?: string;
-  entries: FeedEntry[];
-  queue: string[];
-  activeId?: string;
-  running: boolean;
-  lastError?: string;
-}
+const SKIP_TITLE =
+  /UF Only|Georgia Tech Only|W2 position|Ph\.?D|Mainframe|Starshield|must be a US citizen/i;
+const SKIP_COMPANY = /Booz Allen|ActioNet/i;
 
-export function emptyFeed(sourceUrl = DEFAULT_SPEEDYAPPLY_FEED): FeedState {
-  return {
-    sourceUrl,
-    rawUrl: githubRawUrl(sourceUrl),
-    entries: [],
-    queue: [],
-    running: false,
-  };
-}
-
-/** Convert a GitHub blob URL to raw.githubusercontent.com. Other HTTPS URLs pass through. */
 export function githubRawUrl(url: string): string {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:') throw new Error('feed URL must use HTTPS');
@@ -63,15 +31,6 @@ export function githubRawUrl(url: string): string {
   const match = /^\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/.exec(parsed.pathname);
   if (!match) throw new Error('GitHub feed URL must point to a file using /blob/<branch>/<path>');
   return `https://raw.githubusercontent.com/${match[1]}/${match[2]}/${match[3]}/${match[4]}`;
-}
-
-const SKIP_TITLE =
-  /UF Only|Georgia Tech Only|W2 position|Ph\.?D|Mainframe|Starshield|must be a US citizen/i;
-const SKIP_COMPANY = /Booz Allen|ActioNet/i;
-
-/** Same deal-breakers as agent/src/pipeline/speedyapply.ts (school lock, clearance, W2 mills). */
-export function isEligibleFeedEntry(entry: Pick<FeedEntry, 'title' | 'company'>): boolean {
-  return !SKIP_TITLE.test(entry.title) && !SKIP_COMPANY.test(entry.company);
 }
 
 export function parseAgeHours(label: string): number {
@@ -90,14 +49,10 @@ export function parseAgeHours(label: string): number {
   return amount * 24 * 365;
 }
 
-/**
- * Parse SpeedyApply's markdown tables. The feed's Age column is relative rather than a stable
- * date, so age is the ordering contract: smallest age first, source order breaks ties.
- */
-export function parseSpeedyApplyMarkdown(markdown: string): FeedEntry[] {
-  const out: FeedEntry[] = [];
+export function parseSpeedyApplyMarkdown(markdown: string): SpeedyApplyJob[] {
+  const out: SpeedyApplyJob[] = [];
   const seen = new Set<string>();
-  let section: FeedSection = 'Other';
+  let section = 'Other';
   let sourceOrder = 0;
 
   for (const rawLine of markdown.split(/\r?\n/)) {
@@ -114,18 +69,15 @@ export function parseSpeedyApplyMarkdown(markdown: string): FeedEntry[] {
     const cells = splitTableRow(line);
     if (cells.length < 5) continue;
 
+    const hasSalary = cells.length >= 6;
     const companyCell = cells[0];
     const positionCell = cells[1];
     const locationCell = cells[2];
-    // FAANG+/Quant currently include Salary; Other currently does not.
-    const hasSalary = cells.length >= 6;
     const salaryCell = hasSalary ? cells[3] : undefined;
     const postingCell = cells[hasSalary ? 4 : 3];
     const ageCell = cells[hasSalary ? 5 : 4];
     const extractedUrl = extractHref(postingCell ?? '');
     if (!extractedUrl || !/^https?:\/\//i.test(extractedUrl)) continue;
-    // Never put personal application data onto plaintext HTTP. Known legacy links are upgraded
-    // before Chrome opens them; sites without HTTPS will fail visibly instead of leaking data.
     const url = extractedUrl.replace(/^http:\/\//i, 'https://');
     const normalizedUrl = canonicalJobUrl(url);
     if (seen.has(normalizedUrl)) continue;
@@ -149,73 +101,77 @@ export function parseSpeedyApplyMarkdown(markdown: string): FeedEntry[] {
       ageHours: parseAgeHours(ageLabel),
       section,
       sourceOrder: sourceOrder++,
-      status: 'unseen',
     });
   }
 
   return out.sort((a, b) => a.ageHours - b.ageHours || a.sourceOrder - b.sourceOrder);
 }
 
-/** Preserve statuses across a feed refresh while replacing changing metadata and age values. */
-export function mergeFeedEntries(fresh: FeedEntry[], previous: FeedEntry[]): FeedEntry[] {
-  const prior = new Map(previous.map((entry) => [canonicalJobUrl(entry.url), entry]));
-  return fresh.map((entry) => {
-    const old = prior.get(canonicalJobUrl(entry.url));
-    if (!old) return entry;
-    return {
-      ...entry,
-      status: old.status,
-      tabId: old.tabId,
-      jobId: old.jobId,
-      error: old.error,
-    };
+/** Hard skips: citizenship, clearance, school lock, staffing mills. */
+export function isEligibleSpeedyApplyJob(job: Pick<SpeedyApplyJob, 'title' | 'company'>): boolean {
+  return !SKIP_TITLE.test(job.title) && !SKIP_COMPANY.test(job.company);
+}
+
+export function ineligibleReason(job: Pick<SpeedyApplyJob, 'title' | 'company'>): string | undefined {
+  if (SKIP_TITLE.test(job.title)) return `title matches a deal-breaker: ${job.title}`;
+  if (SKIP_COMPANY.test(job.company)) return `company matches a deal-breaker: ${job.company}`;
+  return undefined;
+}
+
+export function guessAts(url: string): AtsKind {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.includes('greenhouse')) return 'greenhouse';
+    if (host.includes('lever.co')) return 'lever';
+    if (host.includes('ashbyhq.com')) return 'ashby';
+    if (host.includes('myworkdayjobs.com')) return 'workday';
+    if (host.includes('smartrecruiters.com')) return 'smartrecruiters';
+    if (host.includes('icims.com')) return 'icims';
+    if (host.includes('linkedin.com')) return 'linkedin';
+    if (host.includes('indeed.com')) return 'indeed';
+  } catch {
+    /* ignore */
+  }
+  return 'unknown';
+}
+
+/** Metadata-only posting the Cursor /autoapply path expands from the apply URL. */
+export function speedyJobToPosting(job: SpeedyApplyJob): JobPosting {
+  const lines = [
+    `${job.company} is hiring for ${job.title}.`,
+    job.location ? `Location: ${job.location}.` : undefined,
+    job.salary ? `Salary listed on SpeedyApply: ${job.salary}.` : undefined,
+    `Apply URL: ${job.url}`,
+    '---',
+    'Full posting text is not in the SpeedyApply table. Fetch the Apply URL before scoring.',
+  ].filter((line): line is string => Boolean(line));
+  return {
+    url: job.url,
+    applyUrl: job.url,
+    ats: guessAts(job.url),
+    title: job.title,
+    company: job.company,
+    location: job.location || undefined,
+    description: lines.join('\n'),
+    companyDomain: toDomain(job.companyUrl),
+    source: 'manual',
+    hasInlineForm: false,
+  };
+}
+
+export async function fetchSpeedyApplyFeed(
+  sourceUrl = DEFAULT_SPEEDYAPPLY_FEED,
+): Promise<SpeedyApplyJob[]> {
+  const rawUrl = githubRawUrl(sourceUrl);
+  const res = await fetch(rawUrl, {
+    headers: { accept: 'text/plain, text/markdown;q=0.9, */*;q=0.1' },
   });
-}
-
-/** Select the next unseen jobs in their already-sorted order without disturbing an active job. */
-export function enqueueNextUnseen(feed: FeedState, count: number): FeedState {
-  const bounded = Math.max(1, Math.min(50, Math.floor(count || 10)));
-  const skippedIds = new Set(
-    feed.entries
-      .filter((entry) => entry.status === 'unseen' && !isEligibleFeedEntry(entry))
-      .map((entry) => entry.id),
-  );
-  const selected = feed.entries
-    .filter((entry) => entry.status === 'unseen' && !skippedIds.has(entry.id))
-    .slice(0, bounded);
-  const selectedIds = new Set(selected.map((entry) => entry.id));
-  return {
-    ...feed,
-    entries: feed.entries.map((entry) => {
-      if (skippedIds.has(entry.id)) {
-        return {
-          ...entry,
-          status: 'skipped',
-          error: 'deal-breaker: sponsorship, clearance, school lock, or staffing mill',
-        };
-      }
-      return selectedIds.has(entry.id) ? { ...entry, status: 'queued' } : entry;
-    }),
-    queue: [...feed.queue, ...selected.map((entry) => entry.id)],
-    running: selected.length > 0 || feed.queue.length > 0 || Boolean(feed.activeId),
-    lastError:
-      selected.length === 0 ? 'no unseen jobs remain; sync the feed or reset an entry' : undefined,
-  };
-}
-
-/** Stop after the active job and return jobs that have not opened yet to the unseen pool. */
-export function stopPendingFeed(feed: FeedState): FeedState {
-  const pending = new Set(feed.queue);
-  return {
-    ...feed,
-    entries: feed.entries.map((entry) =>
-      pending.has(entry.id) && entry.status === 'queued'
-        ? { ...entry, status: 'unseen' }
-        : entry,
-    ),
-    queue: [],
-    running: Boolean(feed.activeId),
-  };
+  if (!res.ok) throw new Error(`feed returned HTTP ${res.status}`);
+  const markdown = await res.text();
+  if (markdown.length > 2_000_000) throw new Error('feed is larger than the 2 MB safety limit');
+  const parsed = parseSpeedyApplyMarkdown(markdown);
+  if (parsed.length === 0) throw new Error('no SpeedyApply job rows found in the feed');
+  return parsed;
 }
 
 export function canonicalJobUrl(url: string): string {
@@ -234,7 +190,6 @@ export function canonicalJobUrl(url: string): string {
 }
 
 function splitTableRow(line: string): string[] {
-  // The source uses HTML links/images inside markdown cells, but not literal pipes within cells.
   return line
     .replace(/^\|/, '')
     .replace(/\|$/, '')
@@ -273,7 +228,6 @@ function decodeEntities(value: string): string {
 }
 
 function stableId(value: string): string {
-  // FNV-1a: deterministic, compact, and sufficient for local queue ids.
   let hash = 0x811c9dc5;
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i);

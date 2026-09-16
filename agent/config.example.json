@@ -24,7 +24,7 @@
     "extraTitles": ["Talent Acquisition", "Recruiter", "Technical Recruiter"]
   },
   "llm": {
-    "backend": "auto",
+    "backend": "cursor",
     "model": ""
   },
   "gmail": {
