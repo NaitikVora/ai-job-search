@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fillForm } from '../src/fill';
 import { AUTOPILOT_ID_ATTR, scanForm } from '../src/scan';
-import { confirmationText, findSubmitButton, looksSubmitted } from '../src/submit';
+import { clickSubmit, confirmationText, findSubmitButton, looksSubmitted } from '../src/submit';
 
 function mount(html: string): Document {
   document.body.innerHTML = html;
@@ -102,5 +102,31 @@ describe('submit helpers', () => {
     expect(findSubmitButton(document, url)?.id).toBe('submit_app');
     expect(looksSubmitted(document, url)).toBe(true);
     expect(confirmationText(document, url)).toMatch(/received/i);
+  });
+
+  it('advances multi-step forms but never clicks the final button in review mode', () => {
+    mount(`
+      <form>
+        <button id="next" type="button" data-automation-id="bottom-navigation-next-button">Next</button>
+        <button id="final" type="submit" data-automation-id="submit-application">Submit application</button>
+      </form>
+    `);
+    document.querySelector('form')!.addEventListener('submit', (event) => event.preventDefault());
+    let nextClicks = 0;
+    let finalClicks = 0;
+    document.getElementById('next')!.addEventListener('click', () => nextClicks++);
+    document.getElementById('final')!.addEventListener('click', () => finalClicks++);
+    const url = 'https://acme.wd1.myworkdayjobs.com/en-US/jobs/1';
+
+    const first = clickSubmit(document, url, { allowFinal: false });
+    expect(first.nextClicked).toBe(true);
+    expect(nextClicks).toBe(1);
+    expect(finalClicks).toBe(0);
+
+    document.getElementById('next')!.remove();
+    const final = clickSubmit(document, url, { allowFinal: false });
+    expect(final).toMatchObject({ submitted: false });
+    expect(final.finalClicked).toBeUndefined();
+    expect(finalClicks).toBe(0);
   });
 });

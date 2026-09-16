@@ -2,7 +2,7 @@
   "name": "ai-job-search-autopilot-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Local autopilot daemon: runs the repo's /autoapply and /outreach workflows via the Claude Agent SDK and serves the Chrome extension.",
+  "description": "Local autopilot daemon: SpeedyApply discovery, Cursor /autoapply tailoring, form mapping, and the Chrome extension API.",
   "type": "module",
   "engines": {
     "node": ">=22"

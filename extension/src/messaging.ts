@@ -1,5 +1,6 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { ApplicationJob, FieldAnswer, FormSchema, JobPosting, OutreachTarget, PublicConfig, TrackerRow } from '@protocol';
+import type { FeedState } from './feed';
 
 export interface FilePayload {
   name: string;
@@ -22,6 +23,7 @@ export interface FillResult {
 export interface SubmitResult {
   submitted: boolean;
   nextClicked?: boolean;
+  finalClicked?: boolean;
   confirmationText?: string;
   url: string;
 }
@@ -35,14 +37,16 @@ export interface ProtocolMap {
   detect(): DetectResult;
   scan(): FormSchema;
   fill(data: FillPayload): FillResult;
-  submit(data: { force?: boolean }): SubmitResult;
+  submit(data: { force?: boolean; allowFinal?: boolean }): SubmitResult;
   pageReady(data: { posting: JobPosting | null; tabUrl: string }): void;
+  manualSubmissionDetected(data: { confirmationText?: string; url: string }): void;
   getState(): {
     connected: boolean;
     config?: PublicConfig;
     jobs: ApplicationJob[];
     outreach: OutreachTarget[];
     tracker: TrackerRow[];
+    feed: FeedState;
     error?: string;
   };
   pair(data: { token: string; daemonUrl?: string }): { ok: boolean; error?: string };
@@ -53,7 +57,17 @@ export interface ProtocolMap {
   markReview(data: { jobId: string; reason: string }): { job: ApplicationJob };
   sendOutreach(data: { id: string }): { ok: boolean };
   skipOutreach(data: { id: string }): { ok: boolean };
-  startFill(data: { jobId: string; tabId: number; forceSubmit?: boolean }): { ok: boolean; error?: string };
+  startFill(data: {
+    jobId: string;
+    tabId: number;
+    forceSubmit?: boolean;
+    reviewOnly?: boolean;
+  }): { ok: boolean; error?: string };
+  syncFeed(data: { sourceUrl?: string }): FeedState;
+  startReviewBatch(data: { count: number }): FeedState;
+  stopReviewBatch(): FeedState;
+  openFeedTab(data: { entryId: string }): { ok: boolean; error?: string };
+  resetFeedEntry(data: { entryId: string }): FeedState;
   doctor(): { checks: Array<{ name: string; ok: boolean; detail: string; required: boolean }> };
   patchConfig(data: unknown): PublicConfig;
 }

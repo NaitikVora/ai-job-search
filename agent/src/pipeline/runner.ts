@@ -101,7 +101,7 @@ export class Runner {
     }
     const profile = loadProfileContext(this.paths);
     if (profileLooksUnpopulated(profile)) {
-      this.skip(id, 'candidate profile is unpopulated: run /setup in Claude Code first');
+      this.skip(id, 'candidate profile is unpopulated: run /setup first');
       return;
     }
 

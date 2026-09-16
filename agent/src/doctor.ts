@@ -61,7 +61,16 @@ export async function runDoctor(cfg: AgentConfig, paths: Paths, gmail: GmailClie
   add('Standing answers (agent/profile/answers.json)', fs.existsSync(paths.answersFile), fs.existsSync(paths.answersFile) ? paths.answersFile : 'copy answers.example.json to answers.json and fill it in');
 
   const claude = process.env.CLAUDE_CODE_PATH ?? which('claude');
-  add('Claude Code CLI / Agent SDK binary', Boolean(claude), claude ?? 'not found in PATH (the SDK bundles a binary as an optional dependency; `npm install` normally provides it)', false);
+  add(
+    'Tailor backend',
+    true,
+    cfg.llm.backend === 'cursor'
+      ? 'Cursor chat runs /autoapply; SpeedyApply is the discovery feed (`npm run cli -- feed`)'
+      : claude
+        ? `Claude Agent SDK (${claude})`
+        : 'Claude binary not in PATH',
+    false,
+  );
 
   const lualatex = which('lualatex');
   const xelatex = which('xelatex');
@@ -73,8 +82,12 @@ export async function runDoctor(cfg: AgentConfig, paths: Paths, gmail: GmailClie
   add('Bun (portal CLIs for /scrape)', Boolean(which('bun')), which('bun') ?? 'not installed (only needed for /scrape)', false);
 
   add('APOLLO_API_KEY', Boolean(process.env.APOLLO_API_KEY), process.env.APOLLO_API_KEY ? 'set' : 'not set: referral search disabled (agent/.env)', false);
-  const llmBackend = process.env.ANTHROPIC_API_KEY && (cfg.llm.model || process.env.ANTHROPIC_MODEL) ? 'anthropic' : 'agent-sdk';
-  add('LLM backend', true, llmBackend === 'anthropic' ? `direct Anthropic API (${cfg.llm.model || process.env.ANTHROPIC_MODEL})` : 'Claude Agent SDK (Claude Code login)', false);
+  if (cfg.llm.backend === 'cursor') {
+    add('LLM backend', true, 'Cursor runs /autoapply; SpeedyApply is the only discovery feed', false);
+  } else {
+    const llmBackend = process.env.ANTHROPIC_API_KEY && (cfg.llm.model || process.env.ANTHROPIC_MODEL) ? 'anthropic' : 'agent-sdk';
+    add('LLM backend', true, llmBackend === 'anthropic' ? `direct Anthropic API (${cfg.llm.model || process.env.ANTHROPIC_MODEL})` : 'Claude Agent SDK (Claude Code login)', false);
+  }
 
   add('Gmail credentials', gmail.hasCredentials(), gmail.hasCredentials() ? paths.gmailCredentialsFile : 'missing: download a Desktop-app OAuth client JSON to agent/secrets/gmail_credentials.json', false);
   add('Gmail authorized', gmail.isAuthorized(), gmail.isAuthorized() ? `connected${gmail.accountEmail() ? ` as ${gmail.accountEmail()}` : ''}` : 'run `npm run cli -- gmail auth`', false);

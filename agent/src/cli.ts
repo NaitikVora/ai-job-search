@@ -13,9 +13,17 @@
  *   npm run cli -- outreach follow-ups
  *   npm run cli -- outreach list
  *   npm run cli -- jobs
+ *   npm run cli -- feed [--count N] [--all] [--url <blob>] [--write-postings]
  */
 import { buildApp } from './app.js';
 import { runDoctor } from './doctor.js';
+import { writePostingFile } from './pipeline/tailor.js';
+import {
+  DEFAULT_SPEEDYAPPLY_FEED,
+  fetchSpeedyApplyFeed,
+  isEligibleSpeedyApplyJob,
+  speedyJobToPosting,
+} from './pipeline/speedyapply.js';
 
 function arg(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
@@ -113,8 +121,29 @@ async function main(): Promise<number> {
       }
       return 0;
     }
+    case 'feed': {
+      const source = arg('--url') || DEFAULT_SPEEDYAPPLY_FEED;
+      const count = arg('--count') ? Number(arg('--count')) : 10;
+      const jobs = await fetchSpeedyApplyFeed(source);
+      const eligible = has('--all') ? jobs : jobs.filter(isEligibleSpeedyApplyJob);
+      const shown = eligible.slice(0, Math.max(1, Math.min(50, count)));
+      console.log(
+        `${jobs.length} rows · ${eligible.length} eligible · showing ${shown.length} newest from ${source}`,
+      );
+      for (const job of shown) {
+        console.log(`${job.ageLabel.padStart(4)}  ${job.section.padEnd(7)}  ${job.company} | ${job.title}  ${job.location}`);
+        console.log(`      ${job.url}`);
+      }
+      if (has('--write-postings')) {
+        for (const job of shown) {
+          const rel = writePostingFile(app.paths, speedyJobToPosting(job));
+          console.log(`wrote ${rel}`);
+        }
+      }
+      return 0;
+    }
     default:
-      console.log('commands: doctor | token | gmail [auth] | outreach (--company --role [--domain] [--people] [--send] | list | send --id | skip --id | send-pending | follow-ups) | jobs');
+      console.log('commands: doctor | token | gmail [auth] | outreach (...) | jobs | feed [--count N] [--all] [--url <blob>] [--write-postings]');
       return cmd ? 2 : 0;
   }
 }
